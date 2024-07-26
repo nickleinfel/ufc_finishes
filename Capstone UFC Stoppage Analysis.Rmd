@@ -1,0 +1,205 @@
+---
+title: "UFC Method of Victory Analysis"
+author: "Nick Leinfelder"
+date: "2024-07-24"
+output: html_document
+---
+
+# Background
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+The Ultimate Fighting Championship (UFC) is a leading mixed martial arts (MMA) organization, featuring top fighters from various disciplines competing globally. Known for its intense competition and high-energy events, the UFC has gained immense popularity since its founding in 1993.
+
+The betting industry has significantly intertwined with the UFC, with sportsbooks offering a variety of betting options on fight outcomes, methods of victory, and round durations, boosting fan engagement and viewership. The legalization of sports betting in many regions has further amplified this relationship, contributing to the UFC's financial growth and mainstream appeal.
+
+This document analyzes UFC finishes by weight class for men, women, and title fights. It uses data on KO/TKO/Doctor Stoppage and Submission finishes to create visualizations and calculate percentages of stoppages.
+
+* What, if any trends, are there between weightclasses and method of victory?
+* How do these trends compare to title fights? Between Men and Women?
+* How can we use this information to better predict winners and method of victory across UFC fights? 
+
+# Load Packages
+```{r}
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+```
+
+# Load data into R
+```{r}
+men_MOV <- read_csv("men_MOV.csv")
+title_MOV <- read_csv("title_MOV.csv")
+women_MOV <- read_csv("women_MOV.csv")
+```
+
+# View Dataset
+```{r}
+head(men_MOV)
+head(women_MOV)
+head(title_MOV)
+```
+
+### Remove columns to ensure accuarcy of data
+```{r}
+men_MOV$`Percentage of Stoppages` <- NULL
+women_MOV$`Percentage of Stoppages` <- NULL
+title_MOV$`Percentage of Stoppages` <- NULL
+
+men_MOV$`Grand Total` <- NULL
+women_MOV$`Grand Total` <- NULL
+title_MOV$`Grand Total` <- NULL
+
+```
+
+# Reorganizing the data
+Weight classes in data tables organized to ascending order. Then, set a numeric value to the weight classes to be able to set a trend line later in the analysis.
+```{r}
+men_desired_order <- c("Catch Weight","Flyweight", "Bantamweight", "Featherweight", "Lightweight", "Welterweight", "Middleweight", "Light Heavyweight", "Heavyweight")
+women_desired_order <-  c("Women's Strawweight","Women's Flyweight", "Women's Bantamweight", "Women's Featherweight")
+title_desired_order <- c("UFC Women's Strawweight Title", "UFC Women's Flyweight Title", "UFC Flyweight Title", "UFC Women's Bantamweight Title", "UFC Bantamweight Title", "UFC Featherweight Title", "UFC Lightweight Title", "UFC Welterweight Title", "UFC Middleweight Title", "UFC Light Heavyweight Title", "UFC Heavyweight Title")
+```
+
+
+```{r}
+men_MOV$`Weight Class Numeric` <- as.numeric(factor(men_MOV$`Weight Class`, levels = men_desired_order))
+women_MOV$`Weight Class Numeric` <- as.numeric(factor(women_MOV$`Weight Class`, levels = women_desired_order))
+title_MOV$`Weight Class Numeric` <- as.numeric(factor(title_MOV$`Weight Class`, levels = title_desired_order))
+```
+
+# Charting the Data
+Data plotted with trend line for men's, women's, and title fight finishes.
+
+## Men Finishes
+```{r}
+ggplot(men_MOV, aes(x = `Weight Class Numeric`)) +
+  geom_point(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage")) +
+  geom_smooth(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage"), method = "loess") +
+  geom_point(aes(y = Submission, color = "Submission")) +
+  geom_smooth(aes(y = Submission, color = "Submission"), method = "loess") +
+  scale_x_continuous(breaks = 1:length(men_desired_order), labels = men_desired_order) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "Counts", color = "Type") + 
+  scale_color_manual(values = c("KO/TKO/Doctor Stoppage" = "blue", "Submission" = "red")) +
+  theme(legend.position = "bottom") +
+  ggtitle("UFC Men's Finishes by Weight Class")
+```
+
+## Womens Finishes
+```{r}
+ggplot(women_MOV, aes(x = `Weight Class Numeric`)) +
+  geom_point(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage")) +
+  geom_smooth(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage"), method = "loess") +
+  geom_point(aes(y = Submission, color = "Submission")) +
+  geom_smooth(aes(y = Submission, color = "Submission"), method = "loess") +
+  scale_x_continuous(breaks = 1:length(women_desired_order), labels = women_desired_order) +
+  ylim(0, 60) + # Set y-axis limits
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "Counts", color = "Type") + # Add labels
+  scale_color_manual(values = c("KO/TKO/Doctor Stoppage" = "blue", "Submission" = "red")) +
+  theme(legend.position = "bottom") +
+  ggtitle("UFC Women's Finishes by Weight Class")
+
+```
+
+## Title Finishes
+```{r}
+ggplot(title_MOV, aes(x = `Weight Class Numeric`)) +
+  geom_point(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage")) +
+  geom_smooth(aes(y = `KO/TKO/Doctor Stoppage`, color = "KO/TKO/Doctor Stoppage"), method = "loess") +
+  geom_point(aes(y = Submission, color = "Submission")) +
+  geom_smooth(aes(y = Submission, color = "Submission"), method = "loess") +
+  scale_x_continuous(breaks = 1:length(title_desired_order), labels = title_desired_order) +
+  ylim(0, 30) + # Set y-axis limits
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(y = "Counts", color = "Type") + # Add labels
+  scale_color_manual(values = c("KO/TKO/Doctor Stoppage" = "blue", "Submission" = "red")) +
+  theme(legend.position = "bottom") +
+  ggtitle("UFC Title Fight Finishes by Weight Class")
+
+```
+
+Created new columns to find the total number of fights in each weight class from each data table and find the percentage of stoppages from each weight class.
+
+### Calculate total number of fights
+```{r}
+men_MOV$grand_total_fights <- men_MOV$`KO/TKO/Doctor Stoppage` + men_MOV$Submission + men_MOV$Decision
+women_MOV$grand_total_fights <- women_MOV$`KO/TKO/Doctor Stoppage` + women_MOV$Submission + women_MOV$Decision
+title_MOV$grand_total_fights <- title_MOV$`KO/TKO/Doctor Stoppage` + title_MOV$Submission + title_MOV$Decision
+```
+
+### Calculate the total stoppages
+```{r}
+men_MOV$Total_Stoppages <- men_MOV$`KO/TKO/Doctor Stoppage` + men_MOV$Submission
+women_MOV$Total_Stoppages <- women_MOV$`KO/TKO/Doctor Stoppage` + women_MOV$Submission
+title_MOV$Total_Stoppages <- title_MOV$`KO/TKO/Doctor Stoppage` + title_MOV$Submission
+```
+
+### Calculate the grand total of all stoppages excluding any null values
+```{r}
+men_grand_total_stoppage <- sum(men_MOV$Total_Stoppages, na.rm = TRUE)
+women_grand_total_stoppage <- sum(women_MOV$Total_Stoppages, na.rm = TRUE)
+title_grand_total_stoppage <- sum(title_MOV$Total_Stoppages, na.rm = TRUE)
+
+```
+
+### Calculate the percentage of each stoppage
+```{r}
+men_MOV$Percentage_Stoppages <- (men_MOV$Total_Stoppages / men_MOV$grand_total_fights) * 100
+women_MOV$Percentage_Stoppages <- (women_MOV$Total_Stoppages / women_MOV$grand_total_fights) * 100
+title_MOV$Percentage_Stoppages <- (title_MOV$Total_Stoppages / title_MOV$grand_total_fights) * 100
+```
+
+# Charting the Percent of Stoppage Data
+## Men Percent of Fights Due to Stoppage 
+```{r}
+ggplot(men_MOV, aes(x = `Weight Class Numeric`, y = Percentage_Stoppages)) +
+  geom_line(color = "blue") +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +
+  labs(title = "Percentage of Stoppages by Weight Class",
+       x = "Weight Class",
+       y = "Percentage of Stoppages") +
+  scale_x_continuous(breaks = 1:length(men_desired_order), labels = men_desired_order) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Women Percent of Fights Due to Stoppage 
+```{r}
+ggplot(women_MOV, aes(x = `Weight Class Numeric`, y = Percentage_Stoppages)) +
+  geom_line(color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) + # Adding trend line
+  labs(title = "Percentage of Stoppages by Weight Class",
+       x = "Weight Class",
+       y = "Percentage of Stoppages") +
+  scale_x_continuous(breaks = 1:length(women_desired_order), labels = women_desired_order) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Title Percent of Fights Due to Stoppage 
+```{r}
+ggplot(title_MOV, aes(x = `Weight Class Numeric`, y = Percentage_Stoppages)) +
+  geom_line(color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) + # Adding trend line
+  labs(title = "Percentage of Stoppages by Weight Class",
+       x = "Weight Class",
+       y = "Percentage of Stoppages") +
+  scale_x_continuous(breaks = 1:length(title_desired_order), labels = title_desired_order) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Conclusion 
+In this analysis, we explored UFC fight finishes by weight class for men, women, and title fights. We can see that the most fights occurred in the lightweight, welterweight, and middleweight weight classes, respectively. These weight classes had the most total fight stoppages. 
+
+When analyzing the data to adjust for most stoppages per fight in each respective weight class, we can see a linear relationship between stoppages and weight classes. As the weight classes get heavier, we see an increase in number of stoppages.
+
+This data can be useful in better predicting the method of victory for future fights. As the weight classes increase, there appears to be a great change of a fight stoppage, which may present a betting edge if given the right odds.  
+
+However, it may be useful in future analysis to examine method of victories relative to decades or other time frames, it could be possible that more stoppages occurred earlier or later in the inception of the UFC which could skew the data and hinder future prediction models. 
